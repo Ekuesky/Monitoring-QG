@@ -1,0 +1,59 @@
+# =============================================================================
+# Environnement & Secrets (CRITIQUE : identifiants DB, Grafana, webhooks...)
+# =============================================================================
+*.env
+*.env.*
+!.env.example
+!.env.*.example
+
+# =============================================================================
+# Données et montages locaux persistants (si bind mounts utilisés)
+# =============================================================================
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Données locales spécifiques si non utilisées via volumes Docker nommés
+grafana/data/
+prometheus/data/
+alertmanager/data/
+loki/data/
+uptime-kuma/data/
+
+# =============================================================================
+# Logs & Fichiers temporaires
+# =============================================================================
+*.log
+logs/
+*.tmp
+*.temp
+
+# =============================================================================
+# Fichiers système & Éditeurs
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+
+# VS Code & Antigravity / Cursor
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (IntelliJ, PyCharm, WebStorm...)
+.idea/
+
+# Fichiers de backup / swap (Vim, Nano)
+*.swp
+*.swo
+*.bak
