@@ -1,0 +1,61 @@
+# =============================================================================
+# Configuration Prometheus
+# Scrape toutes les métriques exposées par les exporters
+# =============================================================================
+
+global:
+  scrape_interval: 15s       # Fréquence de collecte des métriques
+  evaluation_interval: 15s   # Fréquence d'évaluation des règles d'alerte
+  scrape_timeout: 10s
+
+# Fichier de règles d'alertes
+rule_files:
+  - "alerts.yml"
+
+# Envoi des alertes à Alertmanager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+# =============================================================================
+# SCRAPE CONFIGURATIONS
+# =============================================================================
+scrape_configs:
+
+  # Prometheus se surveille lui-même
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ----- Métriques Docker / Conteneurs ------
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    # Labels pour identifier les conteneurs Koda
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "koda-docker"
+
+  # ----- Métriques PostgreSQL ------
+  - job_name: "postgres"
+    static_configs:
+      - targets: ["postgres_exporter:9187"]
+        labels:
+          service: "koda-postgres"
+
+  # ----- Métriques Redis ------
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis_exporter:9121"]
+        labels:
+          service: "koda-redis"
+
+  # ----- Métriques Nginx ------
+  - job_name: "nginx"
+    static_configs:
+      - targets: ["nginx_exporter:9113"]
+        labels:
+          service: "koda-nginx"
