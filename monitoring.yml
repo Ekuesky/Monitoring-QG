@@ -1,0 +1,201 @@
+# =============================================================================
+# Stack de Monitoring - Sycosur
+# Usage: docker compose -f monitoring.yml up -d
+# Réseau partagé avec le projet principal : sycosur_network
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PROMETHEUS — Collecte et stockage des métriques
+  # Accès : http://localhost:9090
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: sycosur_prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # ALERTMANAGER — Gestion et envoi des alertes (Email, Slack…)
+  # Accès : http://localhost:9093
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: sycosur_alertmanager
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # GRAFANA — Tableaux de bord et visualisation
+  # Accès : http://localhost:3001
+  # Identifiants par défaut : admin / admin (à changer !)
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: sycosur_grafana
+    restart: unless-stopped
+    env_file:
+      - ./grafana/.env.grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # LOKI — Centralisation des logs
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: sycosur_loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # PROMTAIL — Collecte les logs des conteneurs Docker et les envoie à Loki
+  # ---------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: sycosur_promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # cADVISOR — Métriques des conteneurs Docker
+  # Accès : http://localhost:8081
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: sycosur_cadvisor
+    restart: unless-stopped
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /cgroup:/cgroup:ro
+    ports:
+      - "8081:8080"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # POSTGRES EXPORTER — Métriques PostgreSQL pour Prometheus
+  # ---------------------------------------------------------------------------
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: sycosur_postgres_exporter
+    restart: unless-stopped
+    env_file:
+      - ./exporters/.env.postgres_exporter
+    ports:
+      - "9187:9187"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # REDIS EXPORTER — Métriques Redis pour Prometheus
+  # ---------------------------------------------------------------------------
+  redis_exporter:
+    image: oliver006/redis_exporter:v1.61.0
+    container_name: sycosur_redis_exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # NGINX EXPORTER — Métriques Nginx pour Prometheus
+  # ---------------------------------------------------------------------------
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: sycosur_nginx_exporter
+    restart: unless-stopped
+    command:
+      - "--nginx.scrape-uri=http://nginx/nginx_status"
+    ports:
+      - "9113:9113"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+  # ---------------------------------------------------------------------------
+  # UPTIME KUMA — Surveillance de la disponibilité des endpoints
+  # Accès : http://localhost:3002
+  # ---------------------------------------------------------------------------
+  uptime_kuma:
+    image: louislam/uptime-kuma:1.23.13
+    container_name: sycosur_uptime_kuma
+    restart: unless-stopped
+    volumes:
+      - uptime_kuma_data:/app/data
+    ports:
+      - "3002:3001"
+    networks:
+      - sycosur_network
+      - monitoring_network
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
+  loki_data:
+  uptime_kuma_data:
+
+networks:
+  sycosur_network:
+    external: true
+  monitoring_network:
+    driver: bridge
