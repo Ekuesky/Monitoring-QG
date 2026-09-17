@@ -1,7 +1,7 @@
 # =============================================================================
-# Stack de Monitoring - Sycosur
+# Stack de Monitoring - Koda
 # Usage: docker compose -f monitoring.yml up -d
-# Réseau partagé avec le projet principal : sycosur_network
+# Réseau partagé avec le projet principal : koda_network
 # =============================================================================
 
 services:
@@ -12,7 +12,7 @@ services:
   # ---------------------------------------------------------------------------
   prometheus:
     image: prom/prometheus:v2.52.0
-    container_name: sycosur_prometheus
+    container_name: koda_prometheus
     restart: unless-stopped
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -28,7 +28,7 @@ services:
     ports:
       - "9090:9090"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
   # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ services:
   # ---------------------------------------------------------------------------
   alertmanager:
     image: prom/alertmanager:v0.27.0
-    container_name: sycosur_alertmanager
+    container_name: koda_alertmanager
     restart: unless-stopped
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
@@ -57,7 +57,7 @@ services:
   # ---------------------------------------------------------------------------
   grafana:
     image: grafana/grafana:11.0.0
-    container_name: sycosur_grafana
+    container_name: koda_grafana
     restart: unless-stopped
     env_file:
       - ./grafana/.env.grafana
@@ -77,7 +77,7 @@ services:
   # ---------------------------------------------------------------------------
   loki:
     image: grafana/loki:3.0.0
-    container_name: sycosur_loki
+    container_name: koda_loki
     restart: unless-stopped
     command: -config.file=/etc/loki/loki.yml
     volumes:
@@ -93,7 +93,7 @@ services:
   # ---------------------------------------------------------------------------
   promtail:
     image: grafana/promtail:3.0.0
-    container_name: sycosur_promtail
+    container_name: koda_promtail
     restart: unless-stopped
     command: -config.file=/etc/promtail/promtail.yml
     volumes:
@@ -109,7 +109,7 @@ services:
   # ---------------------------------------------------------------------------
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:v0.47.2
-    container_name: sycosur_cadvisor
+    container_name: koda_cadvisor
     restart: unless-stopped
     privileged: true
     devices:
@@ -123,7 +123,7 @@ services:
     ports:
       - "8081:8080"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
   # ---------------------------------------------------------------------------
@@ -131,14 +131,14 @@ services:
   # ---------------------------------------------------------------------------
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:v0.15.0
-    container_name: sycosur_postgres_exporter
+    container_name: koda_postgres_exporter
     restart: unless-stopped
     env_file:
       - ./exporters/.env.postgres_exporter
     ports:
       - "9187:9187"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
   # ---------------------------------------------------------------------------
@@ -146,14 +146,14 @@ services:
   # ---------------------------------------------------------------------------
   redis_exporter:
     image: oliver006/redis_exporter:v1.61.0
-    container_name: sycosur_redis_exporter
+    container_name: koda_redis_exporter
     restart: unless-stopped
     environment:
       REDIS_ADDR: "redis://redis:6379"
     ports:
       - "9121:9121"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
   # ---------------------------------------------------------------------------
@@ -161,14 +161,14 @@ services:
   # ---------------------------------------------------------------------------
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:1.1.0
-    container_name: sycosur_nginx_exporter
+    container_name: koda_nginx_exporter
     restart: unless-stopped
     command:
       - "--nginx.scrape-uri=http://nginx/nginx_status"
     ports:
       - "9113:9113"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
   # ---------------------------------------------------------------------------
@@ -177,14 +177,14 @@ services:
   # ---------------------------------------------------------------------------
   uptime_kuma:
     image: louislam/uptime-kuma:1.23.13
-    container_name: sycosur_uptime_kuma
+    container_name: koda_uptime_kuma
     restart: unless-stopped
     volumes:
       - uptime_kuma_data:/app/data
     ports:
       - "3002:3001"
     networks:
-      - sycosur_network
+      - koda_network
       - monitoring_network
 
 volumes:
@@ -195,7 +195,7 @@ volumes:
   uptime_kuma_data:
 
 networks:
-  sycosur_network:
+  koda_network:
     external: true
   monitoring_network:
     driver: bridge
