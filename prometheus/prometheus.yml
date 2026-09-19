@@ -39,6 +39,14 @@ scrape_configs:
     static_configs:
       - targets: ["cadvisor:8080"]
 
+  # ---------------------------------------------------------------------------
+  # Node Exporter — métriques matérielles de l'hôte (CPU, RAM, Disque)
+  # Actif en production (monitoring.prod.yml)
+  # ---------------------------------------------------------------------------
+  - job_name: "node_exporter"
+    static_configs:
+      - targets: ["node_exporter:9100"]
+
   # ===========================================================================
   # KODA — Jobs par type de service
   # ===========================================================================

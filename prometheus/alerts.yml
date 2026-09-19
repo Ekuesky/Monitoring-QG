@@ -42,6 +42,52 @@ groups:
           description: "Un conteneur n'est plus détecté par cAdvisor depuis 1 minute."
 
   # ---------------------------------------------------------------------------
+  # ALERTES HÔTE PHYSIQUE / SERVEUR (Node Exporter — Production)
+  # ---------------------------------------------------------------------------
+  - name: host_alerts
+    rules:
+
+      - alert: HostOutOfDiskSpace
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/rootfs"} / node_filesystem_size_bytes{mountpoint="/rootfs"}) * 100 < 10
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Espace disque critique sur le serveur hôte (< 10% restant)"
+          description: "Le disque principal du serveur n'a plus que {{ $value | printf \"%.1f\" }}% d'espace libre."
+
+      - alert: HostDiskWillFillIn24Hours
+        expr: |
+          predict_linear(node_filesystem_free_bytes{mountpoint="/rootfs"}[1h], 86400) < 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Le disque du serveur risque d'être plein dans moins de 24h"
+          description: "Selon le rythme actuel d'écriture, la partition racine sera saturée dans les 24 prochaines heures."
+
+      - alert: HostHighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Utilisation RAM serveur hôte critique (> 90%)"
+          description: "L'hôte utilise {{ $value | printf \"%.1f\" }}% de sa mémoire RAM physique disponible."
+
+      - alert: HostHighCpuLoad
+        expr: |
+          100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Charge CPU serveur hôte élevée (> 90%)"
+          description: "La charge CPU moyenne du serveur hôte est à {{ $value | printf \"%.1f\" }}% depuis 5 minutes."
+
+  # ---------------------------------------------------------------------------
   # ALERTES POSTGRESQL
   # ---------------------------------------------------------------------------
   - name: postgres_alerts
