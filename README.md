@@ -6,11 +6,14 @@ Ce projet est un **QG de monitoring centralisé** capable de surveiller N projet
 
 ```
 monitoring/
-├── monitoring.yml          # Stack principale (services globaux + exporters par projet)
+├── monitoring.yml          # Socle commun (services globaux + exporters)
+├── monitoring.local.yml    # Override Local (rétention 2j, ports ouverts, profil léger)
+├── monitoring.prod.yml     # Override Prod (Node Exporter, quotas, sécurité ports 127.0.0.1)
+├── Makefile                # Commandes rapides (make local, make prod, make reload...)
 ├── add-project.sh          # Script d'aide pour intégrer un nouveau projet
 ├── prometheus/
 │   ├── prometheus.yml      # Scrape configs avec labels project
-│   └── alerts.yml          # Alertes génériques ({{ $labels.project }})
+│   └── alerts.yml          # Alertes génériques ({{ $labels.project }}) + alertes hôte
 ├── alertmanager/
 │   ├── alertmanager.yml    # Routing email + Slack/Discord par projet
 │   └── .env.alertmanager.example
@@ -49,17 +52,54 @@ monitoring/
 
 ## Démarrage
 
+### 1. Variables d'environnement
+
 ```bash
-# Copier et remplir les credentials
+# Credentials exporter Postgres
 cp exporters/koda/.env.postgres_exporter.example exporters/koda/.env.postgres_exporter
 nano exporters/koda/.env.postgres_exporter
 
+# Credentials alertes (Email, Slack, Discord)
 cp alertmanager/.env.alertmanager.example alertmanager/.env.alertmanager
 nano alertmanager/.env.alertmanager
-
-# Lancer la stack
-docker compose -f monitoring.yml up -d
 ```
+
+### 2. Lancement selon l'environnement
+
+Deux variantes optimisées sont disponibles via surcouches Docker Compose :
+
+#### 💻 En Local (Développement)
+Version allégée (rétention 2j, ports d'exporters ouverts sur `localhost` pour curl/debug, Uptime Kuma désactivé par défaut pour sauver ~200 Mo de RAM) :
+
+```bash
+make local
+# Ou manuellement :
+# docker compose -f monitoring.yml -f monitoring.local.yml up -d
+
+# Pour inclure également Uptime Kuma en local :
+make local-full
+```
+
+#### 🚀 En Production
+Version durcie et complète (surveillance matérielle complète avec **Node Exporter**, tous les ports web liés sur `127.0.0.1` pour reverse proxy HTTPS, quotas TSDB 30j/15Go, quotas CPU/RAM) :
+
+```bash
+make prod
+# Ou manuellement :
+# docker compose -f monitoring.yml -f monitoring.prod.yml up -d
+```
+
+### Commandes utiles (Makefile)
+
+| Commande | Action |
+|---|---|
+| `make local` | Démarrer la version locale optimisée |
+| `make local-full` | Démarrer en local avec Uptime Kuma |
+| `make prod` | Démarrer la version de production |
+| `make down` | Arrêter la stack |
+| `make status` | Voir l'état des conteneurs (`ps`) |
+| `make logs` | Voir les logs en temps réel |
+| `make reload` | Recharger la configuration Prometheus à chaud (hot-reload) |
 
 ## Ajouter un nouveau projet
 
