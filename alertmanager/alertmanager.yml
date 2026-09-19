@@ -1,81 +1,82 @@
 # =============================================================================
-# Configuration Alertmanager
-# Gère l'envoi des alertes Prometheus vers les canaux de notification
+# Configuration Alertmanager — QG Multi-projets
+# Les alertes sont groupées par projet (label "project").
+# Secrets (email, webhook) dans alertmanager/.env.alertmanager (non commité).
 # =============================================================================
 
 global:
   resolve_timeout: 5m
-  # Configuration SMTP pour les alertes email
-  smtp_smarthost: "mailpit:8025"          # En local, utilise Mailpit
-  smtp_from: "alertes@koda.local"
+  smtp_smarthost: "mailpit:8025"
+  smtp_from: "alertes@monitoring.local"
   smtp_require_tls: false
 
-# =============================================================================
-# TEMPLATES (optionnel — pour personnaliser le format des messages)
-# =============================================================================
 templates:
   - "/etc/alertmanager/templates/*.tmpl"
 
 # =============================================================================
-# ROUTING — Comment router chaque alerte
+# ROUTING
 # =============================================================================
 route:
-  # Destinataire par défaut
   receiver: "team-email"
-  group_by: ["alertname", "severity"]
-  group_wait: 30s      # Attente avant d'envoyer la première notification du groupe
-  group_interval: 5m   # Intervalle minimum entre deux notifications du même groupe
-  repeat_interval: 4h  # Renvoi de l'alerte si elle n'est toujours pas résolue
+  group_by: ["alertname", "severity", "project"]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
 
-  # Règles de routing spécifiques
   routes:
-    # Alertes critiques → Email + Slack
     - match:
         severity: critical
       receiver: "critical-alerts"
       repeat_interval: 1h
 
-    # Alertes warning → Email seulement
     - match:
         severity: warning
       receiver: "team-email"
       repeat_interval: 4h
 
 # =============================================================================
-# RECEIVERS — Canaux de notification
+# RECEIVERS
 # =============================================================================
 receivers:
 
-  # Alertes critiques : Email + Slack
+  # Alertes critiques : Email + Slack/Discord
   - name: "critical-alerts"
     email_configs:
-      - to: "ton-email@example.com"         # ← Remplace par ton email
+      - to: "ton-email@example.com"       # Remplace par ton email
         send_resolved: true
         headers:
-          Subject: "[CRITIQUE][Koda] {{ .CommonLabels.alertname }}"
-    # Décommente et configure si tu veux les alertes Slack
+          Subject: "[CRITIQUE][{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
+
+    # Slack — décommenter et renseigner SLACK_WEBHOOK_URL dans .env.alertmanager
     # slack_configs:
-    #   - api_url: "https://hooks.slack.com/services/TON/WEBHOOK/URL"
-    #     channel: "#alertes-koda"
-    #     title: "🚨 [CRITIQUE] {{ .CommonLabels.alertname }}"
-    #     text: "{{ range .Alerts }}{{ .Annotations.description }}{{ end }}"
+    #   - api_url: "${SLACK_WEBHOOK_URL}"
+    #     channel: "#alertes-monitoring"
+    #     title: "🚨 [{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
+    #     text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
+    #     send_resolved: true
+
+    # Discord — décommenter et renseigner DISCORD_WEBHOOK_URL dans .env.alertmanager
+    # slack_configs:
+    #   - api_url: "${DISCORD_WEBHOOK_URL}/slack"
+    #     channel: ""
+    #     title: "🚨 [{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
+    #     text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
     #     send_resolved: true
 
   # Alertes warning : Email seulement
   - name: "team-email"
     email_configs:
-      - to: "ton-email@example.com"         # ← Remplace par ton email
+      - to: "ton-email@example.com"       # Remplace par ton email
         send_resolved: true
         headers:
-          Subject: "[WARNING][Koda] {{ .CommonLabels.alertname }}"
+          Subject: "[WARNING][{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
 
 # =============================================================================
-# INHIBITION — Supprime certaines alertes quand une autre est déjà active
-# (ex: ne pas alerter sur Redis si le serveur entier est DOWN)
+# INHIBITION
 # =============================================================================
 inhibit_rules:
   - source_match:
       severity: "critical"
     target_match:
       severity: "warning"
-    equal: ["alertname"]
+    equal: ["alertname", "project"]
