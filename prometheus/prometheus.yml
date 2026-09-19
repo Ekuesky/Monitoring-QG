@@ -1,18 +1,19 @@
 # =============================================================================
-# Configuration Prometheus
-# Scrape toutes les métriques exposées par les exporters
+# Configuration Prometheus — QG Multi-projets
+#
+# Chaque job porte un label "project" pour segmenter les métriques.
+# POUR AJOUTER UN PROJET : décommenter/dupliquer les blocs commentés.
+# Hot-reload sans redémarrage : curl -X POST http://localhost:19090/-/reload
 # =============================================================================
 
 global:
-  scrape_interval: 15s       # Fréquence de collecte des métriques
-  evaluation_interval: 15s   # Fréquence d'évaluation des règles d'alerte
+  scrape_interval: 15s
+  evaluation_interval: 15s
   scrape_timeout: 10s
 
-# Fichier de règles d'alertes
 rule_files:
   - "alerts.yml"
 
-# Envoi des alertes à Alertmanager
 alerting:
   alertmanagers:
     - static_configs:
@@ -24,38 +25,75 @@ alerting:
 # =============================================================================
 scrape_configs:
 
-  # Prometheus se surveille lui-même
+  # ---------------------------------------------------------------------------
+  # Prometheus — auto-monitoring
+  # ---------------------------------------------------------------------------
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
 
-  # ----- Métriques Docker / Conteneurs ------
+  # ---------------------------------------------------------------------------
+  # cAdvisor — métriques de TOUS les conteneurs Docker de l'hôte
+  # ---------------------------------------------------------------------------
   - job_name: "cadvisor"
     static_configs:
       - targets: ["cadvisor:8080"]
-    # Labels pour identifier les conteneurs Koda
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        replacement: "koda-docker"
 
-  # ----- Métriques PostgreSQL ------
+  # ===========================================================================
+  # KODA — Jobs par type de service
+  # ===========================================================================
+
+  # PostgreSQL — Koda
   - job_name: "postgres"
     static_configs:
-      - targets: ["postgres_exporter:9187"]
+      - targets: ["postgres_exporter_koda:9187"]
         labels:
-          service: "koda-postgres"
+          project: "koda"
+          service: "postgres"
+      # — ProjetX (décommenter pour ajouter) —
+      # - targets: ["postgres_exporter_projetx:9187"]
+      #   labels:
+      #     project: "projetx"
+      #     service: "postgres"
 
-  # ----- Métriques Redis ------
+  # Redis — Koda
   - job_name: "redis"
     static_configs:
-      - targets: ["redis_exporter:9121"]
+      - targets: ["redis_exporter_koda:9121"]
         labels:
-          service: "koda-redis"
+          project: "koda"
+          service: "redis"
+      # - targets: ["redis_exporter_projetx:9121"]
+      #   labels:
+      #     project: "projetx"
+      #     service: "redis"
 
-  # ----- Métriques Nginx ------
+  # Nginx — Koda
   - job_name: "nginx"
     static_configs:
-      - targets: ["nginx_exporter:9113"]
+      - targets: ["nginx_exporter_koda:9113"]
         labels:
-          service: "koda-nginx"
+          project: "koda"
+          service: "nginx"
+
+  # Celery Flower — Koda
+  # Flower expose /metrics nativement sur :5555 (pas d'exporter supplémentaire)
+  # Prometheus se connecte directement via koda_network → koda_flower
+  - job_name: "flower"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["koda_flower:5555"]
+        labels:
+          project: "koda"
+          service: "celery"
+
+  # ===========================================================================
+  # <ProjetX> — Jobs par type de service (dupliquer ce bloc)
+  # ===========================================================================
+
+  # - job_name: "postgres_projetx"
+  #   static_configs:
+  #     - targets: ["postgres_exporter_projetx:9187"]
+  #       labels:
+  #         project: "projetx"
+  #         service: "postgres"
