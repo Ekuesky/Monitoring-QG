@@ -1,0 +1,137 @@
+# =============================================================================
+# Monitoring QG — Surcouche Environnement Production
+#
+# Usage :
+#   docker compose -f monitoring.yml -f monitoring.prod.yml up -d
+#
+# Sécurité & Optimisations :
+#   - Ajout de Node Exporter (surveillance OS hôte : disque, RAM globale, CPU, I/O)
+#   - Tous les ports web liés strictement sur 127.0.0.1 (accès via Reverse Proxy ou tunnel SSH)
+#   - Aucun port d'exporter applicatif exposé sur l'hôte
+#   - Quotas TSDB Prometheus (rétention 30 jours ET plafond 15 Go de disque)
+#   - Limites de ressources (deploy.resources.limits) pour éviter tout OOM crash
+#   - Politique de redémarrage : always
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # NODE EXPORTER — Métriques de la machine hôte (CPU, RAM, Disque /, Inodes...)
+  # ---------------------------------------------------------------------------
+  node_exporter:
+    image: prom/node-exporter:v1.8.1
+    container_name: monitoring_node_exporter
+    restart: always
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - monitoring_network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # PROMETHEUS — Rétention 30j + plafond taille 15 Go + port privé
+  # ---------------------------------------------------------------------------
+  prometheus:
+    restart: always
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=15GB"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    ports:
+      - "127.0.0.1:19090:9090"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 2G
+
+  # ---------------------------------------------------------------------------
+  # ALERTMANAGER — Port privé
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    restart: always
+    ports:
+      - "127.0.0.1:9093:9093"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  # ---------------------------------------------------------------------------
+  # GRAFANA — Port privé (accessible via Nginx / Traefik reverse proxy HTTPS)
+  # ---------------------------------------------------------------------------
+  grafana:
+    restart: always
+    ports:
+      - "127.0.0.1:3001:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # LOKI — Port privé & quotas
+  # ---------------------------------------------------------------------------
+  loki:
+    restart: always
+    ports:
+      - "127.0.0.1:3100:3100"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # PROMTAIL — Quotas de ressources
+  # ---------------------------------------------------------------------------
+  promtail:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  # ---------------------------------------------------------------------------
+  # cADVISOR — Port privé
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    restart: always
+    ports:
+      - "127.0.0.1:8081:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  # ---------------------------------------------------------------------------
+  # UPTIME KUMA — Port privé
+  # ---------------------------------------------------------------------------
+  uptime_kuma:
+    restart: always
+    ports:
+      - "127.0.0.1:3002:3001"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M

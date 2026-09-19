@@ -161,8 +161,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./exporters/koda/.env.postgres_exporter
-    ports:
-      - "9187:9187"
     networks:
       - koda_network
       - monitoring_network
@@ -176,8 +174,6 @@ services:
     restart: unless-stopped
     environment:
       REDIS_ADDR: "redis://koda_redis:6379"
-    ports:
-      - "9121:9121"
     networks:
       - koda_network
       - monitoring_network
@@ -191,8 +187,6 @@ services:
     restart: unless-stopped
     command:
       - "--nginx.scrape-uri=http://koda_nginx/nginx_status"
-    ports:
-      - "9113:9113"
     networks:
       - koda_network
       - monitoring_network
