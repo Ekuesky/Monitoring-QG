@@ -1,0 +1,16 @@
+# =============================================================================
+# Grafana Dashboard Provisioner — QG Multi-projets
+# Les dashboards JSON dans grafana/dashboards/ sont chargés automatiquement.
+# =============================================================================
+apiVersion: 1
+
+providers:
+  - name: "monitoring-qg"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true
