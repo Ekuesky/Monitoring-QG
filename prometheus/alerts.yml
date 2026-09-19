@@ -1,5 +1,6 @@
 # =============================================================================
-# Règles d'alertes Prometheus pour Koda
+# Règles d'alertes Prometheus — QG Multi-projets
+# Toutes les alertes incluent {{ $labels.project }} pour identifier le projet.
 # =============================================================================
 
 groups:
@@ -10,18 +11,16 @@ groups:
   - name: system_alerts
     rules:
 
-      # Un conteneur consomme plus de 85% de la RAM qui lui est allouée
       - alert: ContainerHighMemoryUsage
         expr: |
-          (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 85
+          (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!="", container_spec_memory_limit_bytes > 0}) * 100 > 85
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Conteneur {{ $labels.name }} — RAM élevée"
+          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur {{ $labels.name }} — RAM élevée"
           description: "Le conteneur {{ $labels.name }} utilise {{ $value | printf \"%.0f\" }}% de sa RAM allouée depuis plus de 5 minutes."
 
-      # Un conteneur consomme plus de 90% de CPU
       - alert: ContainerHighCpuUsage
         expr: |
           rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 90
@@ -29,19 +28,18 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Conteneur {{ $labels.name }} — CPU élevé"
+          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur {{ $labels.name }} — CPU élevé"
           description: "Le conteneur {{ $labels.name }} utilise {{ $value | printf \"%.0f\" }}% de CPU depuis plus de 5 minutes."
 
-      # Un conteneur est DOWN
       - alert: ContainerDown
         expr: |
-          absent(container_last_seen{name=~"koda_.*"})
+          absent(container_last_seen{name!=""})
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Conteneur Koda non détecté"
-          description: "Un conteneur Koda n'est plus détecté par cAdvisor depuis 1 minute."
+          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur non détecté"
+          description: "Un conteneur n'est plus détecté par cAdvisor depuis 1 minute."
 
   # ---------------------------------------------------------------------------
   # ALERTES POSTGRESQL
@@ -49,17 +47,15 @@ groups:
   - name: postgres_alerts
     rules:
 
-      # PostgreSQL est injoignable
       - alert: PostgresDown
         expr: pg_up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "PostgreSQL est DOWN"
-          description: "L'exporter PostgreSQL ne peut plus se connecter à la base de données."
+          summary: "[{{ $labels.project }}] PostgreSQL est DOWN"
+          description: "L'exporter PostgreSQL (projet: {{ $labels.project }}) ne peut plus se connecter à la base de données."
 
-      # Trop de connexions actives (> 80% du max)
       - alert: PostgresTooManyConnections
         expr: |
           pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
@@ -67,10 +63,9 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL — Connexions saturées"
-          description: "PostgreSQL utilise {{ $value | printf \"%.0f\" }}% de ses connexions disponibles."
+          summary: "[{{ $labels.project }}] PostgreSQL — Connexions saturées"
+          description: "PostgreSQL ({{ $labels.project }}) utilise {{ $value | printf \"%.0f\" }}% de ses connexions disponibles."
 
-      # Transactions en rollback élevées (indicateur d'erreurs applicatives)
       - alert: PostgresHighRollbackRate
         expr: |
           rate(pg_stat_database_xact_rollback[5m]) / (rate(pg_stat_database_xact_commit[5m]) + rate(pg_stat_database_xact_rollback[5m])) * 100 > 10
@@ -78,18 +73,17 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL — Taux de rollback élevé"
-          description: "Le taux de rollback PostgreSQL est de {{ $value | printf \"%.1f\" }}% sur les 5 dernières minutes."
+          summary: "[{{ $labels.project }}] PostgreSQL — Taux de rollback élevé"
+          description: "Le taux de rollback PostgreSQL ({{ $labels.project }}) est de {{ $value | printf \"%.1f\" }}% sur les 5 dernières minutes."
 
-      # Présence de locks bloquants depuis trop longtemps
       - alert: PostgresDeadlocks
         expr: rate(pg_stat_database_deadlocks[5m]) > 0
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL — Deadlocks détectés"
-          description: "Des deadlocks PostgreSQL ont été détectés dans la base {{ $labels.datname }}."
+          summary: "[{{ $labels.project }}] PostgreSQL — Deadlocks détectés"
+          description: "Des deadlocks PostgreSQL ont été détectés dans la base {{ $labels.datname }} (projet: {{ $labels.project }})."
 
   # ---------------------------------------------------------------------------
   # ALERTES REDIS
@@ -97,17 +91,15 @@ groups:
   - name: redis_alerts
     rules:
 
-      # Redis est injoignable
       - alert: RedisDown
         expr: redis_up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Redis est DOWN"
-          description: "L'exporter Redis ne peut plus se connecter à Redis."
+          summary: "[{{ $labels.project }}] Redis est DOWN"
+          description: "L'exporter Redis (projet: {{ $labels.project }}) ne peut plus se connecter à Redis."
 
-      # Redis consomme trop de mémoire (> 85% du maxmemory)
       - alert: RedisHighMemoryUsage
         expr: |
           redis_memory_used_bytes / redis_config_maxmemory * 100 > 85
@@ -115,18 +107,17 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Redis — Mémoire élevée"
-          description: "Redis utilise {{ $value | printf \"%.0f\" }}% de sa mémoire maximale configurée."
+          summary: "[{{ $labels.project }}] Redis — Mémoire élevée"
+          description: "Redis ({{ $labels.project }}) utilise {{ $value | printf \"%.0f\" }}% de sa mémoire maximale configurée."
 
-      # Redis expulse des clés (éviction = données perdues involontairement)
       - alert: RedisEvictions
         expr: increase(redis_evicted_keys_total[5m]) > 0
         for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "Redis — Éviction de clés détectée"
-          description: "Redis a expulsé {{ $value }} clés au cours des 5 dernières minutes. Envisagez d'augmenter la mémoire."
+          summary: "[{{ $labels.project }}] Redis — Éviction de clés détectée"
+          description: "Redis ({{ $labels.project }}) a expulsé {{ $value }} clés au cours des 5 dernières minutes."
 
   # ---------------------------------------------------------------------------
   # ALERTES NGINX
@@ -134,22 +125,44 @@ groups:
   - name: nginx_alerts
     rules:
 
-      # Nginx est injoignable
       - alert: NginxDown
         expr: nginx_up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Nginx est DOWN"
-          description: "L'exporter Nginx ne peut plus scraper les métriques de Nginx."
+          summary: "[{{ $labels.project }}] Nginx est DOWN"
+          description: "L'exporter Nginx (projet: {{ $labels.project }}) ne peut plus scraper les métriques de Nginx."
 
-      # Trop de connexions actives sur Nginx (> 1000)
       - alert: NginxHighConnections
         expr: nginx_connections_active > 1000
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "Nginx — Connexions actives élevées"
-          description: "Nginx a {{ $value }} connexions actives, ce qui peut indiquer une surcharge."
+          summary: "[{{ $labels.project }}] Nginx — Connexions actives élevées"
+          description: "Nginx ({{ $labels.project }}) a {{ $value }} connexions actives, ce qui peut indiquer une surcharge."
+
+  # ---------------------------------------------------------------------------
+  # ALERTES CELERY / WORKERS
+  # ---------------------------------------------------------------------------
+  - name: celery_alerts
+    rules:
+
+      - alert: CeleryWorkerDown
+        expr: flower_workers_total == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "[{{ $labels.project }}] Celery — Aucun worker actif"
+          description: "Flower ({{ $labels.project }}) ne détecte plus aucun worker Celery actif depuis 2 minutes."
+
+      - alert: CeleryTasksBacklog
+        expr: flower_tasks_total{state="PENDING"} > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "[{{ $labels.project }}] Celery — File d'attente saturée"
+          description: "Il y a {{ $value }} tâches en attente dans la queue Celery (projet: {{ $labels.project }})."
