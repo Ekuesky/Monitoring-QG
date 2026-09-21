@@ -1,28 +1,32 @@
-.PHONY: help local local-full prod down logs status reload
+.PHONY: help local local-logs local-full prod down logs status reload
 
 help: ## Affiche l'aide
 	@echo "Monitoring QG — Commandes disponibles :"
 	@echo ""
-	@echo "  make local       Démarre la stack optimisée pour le développement local"
-	@echo "  make local-full  Démarre la stack locale AVEC Uptime Kuma (--profile optional)"
-	@echo "  make prod        Démarre la stack optimisée pour la production (Node Exporter, quotas, sécurité)"
+	@echo "  make local       Démarre le STRICT MINIMUM en local (Prometheus, Grafana, Exporters ~300 Mo RAM)"
+	@echo "  make local-logs  Démarre le strict minimum + agrégation des logs (Loki + Promtail)"
+	@echo "  make local-full  Démarre TOUTE la stack locale (Alertmanager, cAdvisor, Uptime Kuma inclus)"
+	@echo "  make prod        Démarre la stack de production (Node Exporter, quotas, sécurité)"
 	@echo "  make down        Arrête la stack de monitoring"
 	@echo "  make status      Affiche l'état des conteneurs"
 	@echo "  make logs        Affiche les logs de la stack"
 	@echo "  make reload      Recharge la configuration Prometheus sans redémarrer (hot-reload)"
 	@echo ""
 
-local: ## Démarrage en local (léger, rétention 2j, ports ouverts)
+local: ## Démarrage en local — STRICT MINIMUM (5 conteneurs : Prometheus, Grafana, Exporters)
 	docker compose -f monitoring.yml -f monitoring.local.yml up -d
 
-local-full: ## Démarrage en local avec Uptime Kuma inclus
-	docker compose -f monitoring.yml -f monitoring.local.yml --profile optional up -d
+local-logs: ## Démarrage en local avec Loki & Promtail pour les logs
+	docker compose -f monitoring.yml -f monitoring.local.yml --profile logs up -d
 
-prod: ## Démarrage en production (Node Exporter, ports sécurisés, quotas TSDB et ressources)
+local-full: ## Démarrage en local complet (Alertmanager, cAdvisor, Uptime Kuma, Logs)
+	docker compose -f monitoring.yml -f monitoring.local.yml --profile full up -d
+
+prod: ## Démarrage en production (Node Exporter, ports sécurisés 127.0.0.1, quotas)
 	docker compose -f monitoring.yml -f monitoring.prod.yml up -d
 
 down: ## Arrêt de la stack
-	docker compose -f monitoring.yml -f monitoring.local.yml -f monitoring.prod.yml down
+	docker compose -f monitoring.yml -f monitoring.local.yml --profile full down
 
 status: ## État des conteneurs
 	docker compose -f monitoring.yml ps

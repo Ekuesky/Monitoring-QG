@@ -75,7 +75,6 @@ services:
       - "3001:3000"
     depends_on:
       - prometheus
-      - loki
     networks:
       - monitoring_network
 

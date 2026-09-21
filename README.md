@@ -68,15 +68,18 @@ nano alertmanager/.env.alertmanager
 
 Deux variantes optimisées sont disponibles via surcouches Docker Compose :
 
-#### 💻 En Local (Développement)
-Version allégée (rétention 2j, ports d'exporters ouverts sur `localhost` pour curl/debug, Uptime Kuma désactivé par défaut pour sauver ~200 Mo de RAM) :
+#### 💻 En Local (Développement — Strict Minimum)
+Par défaut, `make local` ne démarre **QUE le strict minimum vital** (Prometheus, Grafana et les exporters applicatifs, soit ~300 Mo de RAM au total).
+Les services superflus en dev (Alertmanager, cAdvisor, Loki, Promtail, Uptime Kuma) sont désactivés :
 
 ```bash
+# Strict minimum (5 conteneurs : Prometheus, Grafana, Exporters)
 make local
-# Ou manuellement :
-# docker compose -f monitoring.yml -f monitoring.local.yml up -d
 
-# Pour inclure également Uptime Kuma en local :
+# Si tu as besoin des logs dans Grafana (+ Loki & Promtail) :
+make local-logs
+
+# Si tu veux tester TOUS les services en local :
 make local-full
 ```
 
@@ -91,15 +94,16 @@ make prod
 
 ### Commandes utiles (Makefile)
 
-| Commande | Action |
-|---|---|
-| `make local` | Démarrer la version locale optimisée |
-| `make local-full` | Démarrer en local avec Uptime Kuma |
-| `make prod` | Démarrer la version de production |
-| `make down` | Arrêter la stack |
-| `make status` | Voir l'état des conteneurs (`ps`) |
-| `make logs` | Voir les logs en temps réel |
-| `make reload` | Recharger la configuration Prometheus à chaud (hot-reload) |
+| Commande | Action | Empreinte RAM |
+|---|---|---|
+| `make local` | Strict minimum vital (Prometheus, Grafana, Exporters) | **~300 Mo** |
+| `make local-logs` | Strict minimum + logs Loki/Promtail | ~550 Mo |
+| `make local-full` | Stack locale complète (avec Alertmanager, cAdvisor, Kuma) | ~800 Mo |
+| `make prod` | Version de production complète (Node Exporter, quotas) | Durcie |
+| `make down` | Arrêter proprement la stack | - |
+| `make status` | Voir l'état des conteneurs (`ps`) | - |
+| `make logs` | Voir les logs en temps réel | - |
+| `make reload` | Recharger la configuration Prometheus à chaud (hot-reload) | - |
 
 ## Ajouter un nouveau projet
 

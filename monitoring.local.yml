@@ -1,17 +1,27 @@
 # =============================================================================
-# Monitoring QG — Surcouche Environnement Local (Développement)
+# Monitoring QG — Surcouche Environnement Local (Développement - STRICT MINIMUM)
 #
-# Usage :
-#   docker compose -f monitoring.yml -f monitoring.local.yml up -d
+# Par défaut, cette surcouche ne démarre QUE le strict minimum vital :
+#   - Prometheus (métriques, rétention 2j)
+#   - Grafana (visualisation)
+#   - Exporters applicatifs (Postgres, Redis, Nginx de Koda)
 #
-# Pour inclure Uptime Kuma en local (optionnel, économise ~200 Mo RAM sans lui) :
-#   docker compose -f monitoring.yml -f monitoring.local.yml --profile optional up -d
+# Services superflus désactivés par défaut (profils optionnels) :
+#   - Loki & Promtail  : profil 'logs'    (économise ~250 Mo RAM)
+#   - cAdvisor         : profil 'system'  (économise ~100 Mo RAM)
+#   - Alertmanager     : profil 'alerts'  (économise ~40 Mo RAM)
+#   - Uptime Kuma      : profil 'kuma'    (économise ~200 Mo RAM)
+#
+# USAGE :
+#   make local                -> Strict minimum (5 conteneurs, ~300 Mo RAM)
+#   make local-logs           -> Strict minimum + Loki & Promtail
+#   make local-full           -> Tous les services locaux
 # =============================================================================
 
 services:
 
   # ---------------------------------------------------------------------------
-  # PROMETHEUS — Rétention allégée (2 jours au lieu de 30) pour économiser disque & RAM
+  # PROMETHEUS — Rétention allégée (2 jours au lieu de 30)
   # ---------------------------------------------------------------------------
   prometheus:
     command:
@@ -23,14 +33,40 @@ services:
       - "--web.enable-lifecycle"
 
   # ---------------------------------------------------------------------------
-  # UPTIME KUMA — Profil optionnel pour ne pas consommer de RAM inutile en dev
+  # SERVICES DÉSACTIVÉS PAR DÉFAUT (Activables à la demande via profils)
   # ---------------------------------------------------------------------------
+
+  # Alertmanager : inutile en dev (personne ne veut être alerté pendant qu'il code)
+  alertmanager:
+    profiles:
+      - alerts
+      - full
+
+  # Loki & Promtail : inutiles si on consulte les logs dans le terminal
+  loki:
+    profiles:
+      - logs
+      - full
+
+  promtail:
+    profiles:
+      - logs
+      - full
+
+  # cAdvisor : optionnel (docker stats suffit généralement en local)
+  cadvisor:
+    profiles:
+      - system
+      - full
+
+  # Uptime Kuma : inutile pour sonder localhost
   uptime_kuma:
     profiles:
-      - optional
+      - kuma
+      - full
 
   # ---------------------------------------------------------------------------
-  # EXPORTERS — Ports publiés sur localhost pour faciliter le test curl / debug
+  # EXPORTERS — Ports publiés sur localhost pour faciliter curl & debug direct
   # ---------------------------------------------------------------------------
   postgres_exporter_koda:
     ports:
