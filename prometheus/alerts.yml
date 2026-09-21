@@ -13,12 +13,12 @@ groups:
 
       - alert: ContainerHighMemoryUsage
         expr: |
-          (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!="", container_spec_memory_limit_bytes > 0}) * 100 > 85
+          (container_memory_usage_bytes{name!=""} / (container_spec_memory_limit_bytes{name!=""} > 0)) * 100 > 85
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur {{ $labels.name }} — RAM élevée"
+          summary: "Conteneur {{ $labels.name }} — RAM élevée"
           description: "Le conteneur {{ $labels.name }} utilise {{ $value | printf \"%.0f\" }}% de sa RAM allouée depuis plus de 5 minutes."
 
       - alert: ContainerHighCpuUsage
@@ -28,7 +28,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur {{ $labels.name }} — CPU élevé"
+          summary: "Conteneur {{ $labels.name }} — CPU élevé"
           description: "Le conteneur {{ $labels.name }} utilise {{ $value | printf \"%.0f\" }}% de CPU depuis plus de 5 minutes."
 
       - alert: ContainerDown
@@ -38,7 +38,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "[{{ $labels.project | default \"inconnu\" }}] Conteneur non détecté"
+          summary: "Conteneur non détecté"
           description: "Un conteneur n'est plus détecté par cAdvisor depuis 1 minute."
 
   # ---------------------------------------------------------------------------
