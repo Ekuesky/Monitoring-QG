@@ -38,6 +38,15 @@ scrape_configs:
   - job_name: "cadvisor"
     static_configs:
       - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Propager container_label_project vers le label standard "project"
+      - source_labels: [container_label_project]
+        regex: "(.+)"
+        target_label: project
+      # Fallback : Si container_label_project n'est pas défini, utiliser le nom du projet Docker Compose
+      - source_labels: [project, container_label_com_docker_compose_project]
+        regex: ";(.+)"
+        target_label: project
 
   # ---------------------------------------------------------------------------
   # Node Exporter — métriques matérielles de l'hôte (CPU, RAM, Disque)

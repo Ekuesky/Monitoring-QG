@@ -53,12 +53,6 @@ services:
       - logs
       - full
 
-  # cAdvisor : optionnel (docker stats suffit généralement en local)
-  cadvisor:
-    profiles:
-      - system
-      - full
-
   # Uptime Kuma : inutile pour sonder localhost
   uptime_kuma:
     profiles:

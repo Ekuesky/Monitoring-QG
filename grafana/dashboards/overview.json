@@ -21,7 +21,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -53,7 +53,7 @@
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -70,14 +70,14 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum by (project) (rate(container_cpu_usage_seconds_total{name!=\"\"}[5m])) * 100",
+          "expr": "sum by (project) (rate(container_cpu_usage_seconds_total{name!=\"\",project!=\"\"}[5m])) * 100",
           "legendFormat": "{{ project }}",
           "refId": "A"
         }
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -94,7 +94,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "sum by (project) (container_memory_usage_bytes{name!=\"\"})",
+          "expr": "sum by (project) (container_memory_usage_bytes{name!=\"\",project!=\"\"})",
           "legendFormat": "{{ project }}",
           "refId": "A"
         }
@@ -108,7 +108,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -132,7 +132,7 @@
       ]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "datasource": { "type": "prometheus" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
