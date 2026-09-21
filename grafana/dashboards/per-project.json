@@ -33,7 +33,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "rate(container_cpu_usage_seconds_total{container_label_project=\"$project\",name!=\"\"}[5m]) * 100",
+          "expr": "rate(container_cpu_usage_seconds_total{name!=\"\", container_label_project=\"$project\"}[5m]) * 100 or rate(container_cpu_usage_seconds_total{name!=\"\", name=~\"${project}_.*\"}[5m]) * 100",
           "legendFormat": "{{ name }}",
           "refId": "A"
         }
@@ -53,7 +53,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus" },
-          "expr": "container_memory_usage_bytes{container_label_project=\"$project\",name!=\"\"}",
+          "expr": "container_memory_usage_bytes{name!=\"\", container_label_project=\"$project\"} or container_memory_usage_bytes{name!=\"\", name=~\"${project}_.*\"}",
           "legendFormat": "{{ name }}",
           "refId": "A"
         }
@@ -171,17 +171,21 @@
   "templating": {
     "list": [
       {
-        "current": {},
+        "current": {
+          "selected": true,
+          "text": "koda",
+          "value": "koda"
+        },
         "datasource": { "type": "prometheus" },
-        "definition": "label_values(container_last_seen, container_label_project)",
+        "definition": "label_values(project)",
         "hide": 0,
         "includeAll": false,
         "label": "Projet",
         "multi": false,
         "name": "project",
         "options": [],
-        "query": { "query": "label_values(container_last_seen, container_label_project)", "refId": "StandardVariableQuery" },
-        "refresh": 2,
+        "query": { "query": "label_values(project)", "refId": "StandardVariableQuery" },
+        "refresh": 1,
         "sort": 1,
         "type": "query"
       }
