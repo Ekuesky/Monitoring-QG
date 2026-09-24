@@ -25,11 +25,13 @@ Quand on héberge plusieurs applications sur un serveur (ou en local) :
 
 ```text
 monitoring/
+├── .env.example            # Variables d'environnement (ports personnalisables)
 ├── monitoring.yml          # Socle commun (Grafana, Prometheus, Loki, Promtail, etc.)
 ├── monitoring.local.yml    # Surcouche locale (Strict minimum ~300 Mo, rétention 2j)
 ├── monitoring.prod.yml     # Surcouche production (Node Exporter, quotas, ports sécurisés)
-├── Makefile                # Commandes simples (make local, make prod, make reload...)
+├── Makefile                # Commandes simples (make local, make prod, make reload, make secure...)
 ├── add-project.sh          # Script CLI interactif pour brancher un nouveau projet
+├── CONTRIBUTING.md         # Guide de contribution
 ├── prometheus/
 │   ├── prometheus.yml      # Configuration du scraping multi-projets
 │   └── alerts.yml          # Règles d'alertes génériques et alertes système hôte
@@ -93,16 +95,35 @@ services:
 - Docker et Docker Compose installés.
 - Un réseau Docker existant pour le premier projet que vous souhaitez surveiller (par exemple `docker network create koda_network` pour tester avec la configuration d'exemple).
 
-### 2. Configuration des secrets
+### 2. Configuration des ports (optionnel)
+Par défaut, les ports fonctionnent sans aucune configuration. Pour les personnaliser :
+```bash
+cp .env.example .env
+nano .env   # Modifier les ports selon vos besoins
+```
+
+### 3. Configuration des secrets
 ```bash
 # Configuration des identifiants Grafana (optionnel, admin/admin par défaut)
 cp grafana/.env.grafana.example grafana/.env.grafana
+
+# Générer un mot de passe Grafana sécurisé automatiquement (recommandé en prod) :
+make secure
 
 # Configuration des alertes (Slack, Discord, Email)
 cp alertmanager/.env.alertmanager.example alertmanager/.env.alertmanager
 
 # Si vous utilisez l'exemple Koda :
 cp exporters/koda/.env.postgres_exporter.example exporters/koda/.env.postgres_exporter
+```
+
+### 4. Vérification de la configuration
+```bash
+# Vérifier que tous les fichiers .env nécessaires sont en place :
+make check-env
+
+# Valider la syntaxe Docker Compose :
+make validate
 ```
 
 ---
@@ -143,7 +164,10 @@ make prod
 | `make down` | Arrêt | Éteint proprement l'ensemble des conteneurs |
 | `make status` | Vérification | Affiche l'état des conteneurs (`docker compose ps`) |
 | `make logs` | Suivi | Affiche les logs en direct |
-| `make reload` | Hot-reload | Recharge Prometheus sans couper le service (`curl -X POST /-/reload`) |
+| `make reload` | Hot-reload | Recharge Prometheus sans couper le service |
+| `make check-env` | Pré-requis | Vérifie que tous les fichiers `.env` nécessaires existent |
+| `make validate` | Validation | Vérifie la syntaxe de tous les fichiers Docker Compose |
+| `make secure` | Sécurité | Génère un mot de passe Grafana aléatoire sécurisé |
 
 ---
 
@@ -203,3 +227,5 @@ location /nginx_status {
 ## 🤝 Licence & Contribution
 
 Projet open-source sous licence [MIT](LICENSE). Les contributions, suggestions et ajouts de nouveaux dashboards ou exporters sont les bienvenus !
+
+Consultez le [Guide de contribution](CONTRIBUTING.md) pour les conventions et la checklist avant de soumettre une PR.
