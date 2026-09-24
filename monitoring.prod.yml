@@ -53,7 +53,7 @@ services:
       - "--web.console.templates=/etc/prometheus/consoles"
       - "--web.enable-lifecycle"
     ports:
-      - "127.0.0.1:19090:9090"
+      - "127.0.0.1:${PROMETHEUS_PORT:-19090}:9090"
     deploy:
       resources:
         limits:
@@ -66,7 +66,7 @@ services:
   alertmanager:
     restart: always
     ports:
-      - "127.0.0.1:9093:9093"
+      - "127.0.0.1:${ALERTMANAGER_PORT:-9093}:9093"
     deploy:
       resources:
         limits:
@@ -79,7 +79,7 @@ services:
   grafana:
     restart: always
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
     deploy:
       resources:
         limits:
@@ -92,7 +92,7 @@ services:
   loki:
     restart: always
     ports:
-      - "127.0.0.1:3100:3100"
+      - "127.0.0.1:${LOKI_PORT:-3100}:3100"
     deploy:
       resources:
         limits:
@@ -116,7 +116,7 @@ services:
   cadvisor:
     restart: always
     ports:
-      - "127.0.0.1:8081:8080"
+      - "127.0.0.1:${CADVISOR_PORT:-8081}:8080"
     deploy:
       resources:
         limits:
@@ -129,7 +129,7 @@ services:
   uptime_kuma:
     restart: always
     ports:
-      - "127.0.0.1:3002:3001"
+      - "127.0.0.1:${UPTIME_KUMA_PORT:-3002}:3001"
     deploy:
       resources:
         limits:
