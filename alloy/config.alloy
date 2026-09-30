@@ -1,0 +1,60 @@
+// =============================================================================
+// Grafana Alloy — Configuration minimale
+// Remplace Promtail (EOL mars 2026)
+// Collecte les logs de TOUS les conteneurs Docker → Loki
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// 1. Découverte automatique des conteneurs Docker (auto-discovery)
+// ---------------------------------------------------------------------------
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Relabeling : on conserve les labels Docker utiles pour Loki
+discovery.relabel "docker_logs" {
+  targets = discovery.docker.containers.targets
+
+  // Garder le nom du conteneur comme label "container"
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+
+  // Garder le label "project" positionné via compose labels
+  rule {
+    source_labels = ["__meta_docker_container_label_project"]
+    target_label  = "project"
+  }
+
+  // Garder le label "service" positionné via compose labels
+  rule {
+    source_labels = ["__meta_docker_container_label_service"]
+    target_label  = "service"
+  }
+
+  // Chemin du fichier de log du conteneur
+  rule {
+    source_labels = ["__meta_docker_container_id"]
+    target_label  = "__path__"
+    replacement   = "/var/lib/docker/containers/$1/$1-json.log"
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 2. Lecture des fichiers de logs Docker (JSON multiline)
+// ---------------------------------------------------------------------------
+loki.source.file "docker_logs" {
+  targets    = discovery.relabel.docker_logs.output
+  forward_to = [loki.write.default.receiver]
+}
+
+// ---------------------------------------------------------------------------
+// 3. Envoi vers Loki
+// ---------------------------------------------------------------------------
+loki.write "default" {
+  endpoint {
+    url = "http://monitoring_loki:3100/loki/api/v1/push"
+  }
+}
