@@ -19,7 +19,7 @@ services:
   # NODE EXPORTER — Métriques de la machine hôte (CPU, RAM, Disque /, Inodes...)
   # ---------------------------------------------------------------------------
   node_exporter:
-    image: prom/node-exporter:v1.8.1
+    image: prom/node-exporter:v1.11.1
     container_name: monitoring_node_exporter
     restart: always
     command:
