@@ -18,7 +18,7 @@ services:
   # NOTE : Port 19090 (et non 9090) pour éviter le conflit avec koda_nginx
   # ---------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v3.13.0
     container_name: monitoring_prometheus
     restart: unless-stopped
     command:
@@ -42,7 +42,7 @@ services:
   # Accès : http://localhost:9093
   # ---------------------------------------------------------------------------
   alertmanager:
-    image: prom/alertmanager:v0.27.0
+    image: prom/alertmanager:v0.33.1
     container_name: monitoring_alertmanager
     restart: unless-stopped
     command:
@@ -62,7 +62,7 @@ services:
   # Identifiants par défaut : admin / admin (à changer !)
   # ---------------------------------------------------------------------------
   grafana:
-    image: grafana/grafana:11.0.0
+    image: grafana/grafana:13.2.3
     container_name: monitoring_grafana
     restart: unless-stopped
     env_file:
@@ -82,7 +82,7 @@ services:
   # LOKI — Centralisation des logs
   # ---------------------------------------------------------------------------
   loki:
-    image: grafana/loki:3.0.0
+    image: grafana/loki:3.7.3
     container_name: monitoring_loki
     restart: unless-stopped
     command: -config.file=/etc/loki/loki.yml
@@ -95,18 +95,26 @@ services:
       - monitoring_network
 
   # ---------------------------------------------------------------------------
-  # PROMTAIL — Collecte les logs de TOUS les conteneurs Docker → Loki
-  # Utilise docker_sd_configs pour auto-découverte (lecture seule)
+  # ALLOY (ex-Promtail) — Collecte les logs de TOUS les conteneurs Docker → Loki
+  # Promtail est EOL depuis mars 2026 ; remplacé par Grafana Alloy (LTS)
+  # Utilise docker_sd pour auto-découverte (lecture seule)
+  # Accès UI : http://localhost:12345
   # ---------------------------------------------------------------------------
-  promtail:
-    image: grafana/promtail:3.0.0
-    container_name: monitoring_promtail
+  alloy:
+    image: grafana/alloy:v1.20.0
+    container_name: monitoring_alloy
     restart: unless-stopped
-    command: -config.file=/etc/promtail/promtail.yml
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy
     volumes:
-      - ./promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "${ALLOY_PORT:-12345}:12345"
     networks:
       - monitoring_network
 
@@ -115,7 +123,7 @@ services:
   # Accès : http://localhost:8081
   # ---------------------------------------------------------------------------
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    image: ghcr.io/google/cadvisor:v0.60.6
     container_name: monitoring_cadvisor
     restart: unless-stopped
     privileged: true
@@ -155,7 +163,7 @@ services:
   # ===========================================================================
 
   postgres_exporter_koda:
-    image: prometheuscommunity/postgres-exporter:v0.15.0
+    image: prometheuscommunity/postgres-exporter:v0.20.1
     container_name: monitoring_postgres_koda
     restart: unless-stopped
     env_file:
@@ -168,7 +176,7 @@ services:
       service: "postgres"
 
   redis_exporter_koda:
-    image: oliver006/redis_exporter:v1.61.0
+    image: oliver006/redis_exporter:v1.92.1
     container_name: monitoring_redis_koda
     restart: unless-stopped
     environment:
