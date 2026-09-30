@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "docker-compose": {
+    "fileMatch": [
+      "(^|/)docker-compose[^/]*\\.ya?ml$",
+      "(^|/)monitoring(\\.local|\\.prod)?\\.ya?ml$"
+    ],
+    "pinDigests": true
+  },
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    }
+  ]
+}
