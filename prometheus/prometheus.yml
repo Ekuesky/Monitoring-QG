@@ -50,7 +50,11 @@ scrape_configs:
 
   # ---------------------------------------------------------------------------
   # Node Exporter — métriques matérielles de l'hôte (CPU, RAM, Disque)
-  # Actif en production (monitoring.prod.yml)
+  # NOTE : node_exporter n'est démarré QU'EN PRODUCTION via monitoring.prod.yml.
+  #        Le job est défini ici pour que Prometheus le scrape automatiquement
+  #        lorsque le service est présent. En local il sera simplement absent
+  #        des targets actives (pas de conteneur = pas de scrape).
+  #        → Si tu vois "DOWN" en local, c'est normal : ignorer cette alerte.
   # ---------------------------------------------------------------------------
   - job_name: "node_exporter"
     static_configs:

@@ -100,9 +100,9 @@ services:
           memory: 1G
 
   # ---------------------------------------------------------------------------
-  # PROMTAIL — Quotas de ressources
+  # ALLOY (ex-Promtail) — Quotas de ressources
   # ---------------------------------------------------------------------------
-  promtail:
+  alloy:
     restart: always
     deploy:
       resources:
