@@ -18,7 +18,7 @@ services:
   # NOTE : Port 19090 (et non 9090) pour éviter le conflit avec koda_nginx
   # ---------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:v3.13.0
+    image: prom/prometheus:v3.13.0@sha256:c6b27ea434f8389bfe233fbc7be381cf50587c286e871bc842008f5a1b1908a7
     container_name: monitoring_prometheus
     restart: unless-stopped
     command:
@@ -43,7 +43,7 @@ services:
   # Accès : http://localhost:9093
   # ---------------------------------------------------------------------------
   alertmanager:
-    image: prom/alertmanager:v0.33.1
+    image: prom/alertmanager:v0.33.1@sha256:9e082985f56f4c8c9f724e18f2288c6708f472e56a5286b8863d080434ea065d
     container_name: monitoring_alertmanager
     restart: unless-stopped
     command:
@@ -63,7 +63,7 @@ services:
   # Identifiants par défaut : admin / admin (à changer !)
   # ---------------------------------------------------------------------------
   grafana:
-    image: grafana/grafana:13.2.3
+    image: grafana/grafana:13.2.3@sha256:b28bae15e219c998fb0e0424ed724930cc61b1f61fb404d47c862f9a23f9e572
     container_name: monitoring_grafana
     restart: unless-stopped
     env_file:
@@ -83,7 +83,7 @@ services:
   # LOKI — Centralisation des logs
   # ---------------------------------------------------------------------------
   loki:
-    image: grafana/loki:3.7.3
+    image: grafana/loki:3.7.3@sha256:70b9f699fc9bb868b62f1cfd4f787dfa50242f1fd92e6089787d5d7daea75fe8
     container_name: monitoring_loki
     restart: unless-stopped
     command: -config.file=/etc/loki/loki.yml
@@ -102,7 +102,7 @@ services:
   # Accès UI : http://localhost:12345
   # ---------------------------------------------------------------------------
   alloy:
-    image: grafana/alloy:v1.20.0
+    image: grafana/alloy:v1.20.0@sha256:f111cce835516c5f99166342be7038496b52ced16667be5a11e19258a3e4cd30
     container_name: monitoring_alloy
     restart: unless-stopped
     command:
@@ -124,7 +124,7 @@ services:
   # Accès : http://localhost:8081
   # ---------------------------------------------------------------------------
   cadvisor:
-    image: ghcr.io/google/cadvisor:v0.60.6
+    image: ghcr.io/google/cadvisor:v0.60.6@sha256:b8e7d1093144fd088f425ff003d75a4aa405de075db78dae3bc563730b1bd07a
     container_name: monitoring_cadvisor
     restart: unless-stopped
     privileged: true
@@ -146,7 +146,7 @@ services:
   # Accès : http://localhost:3002
   # ---------------------------------------------------------------------------
   uptime_kuma:
-    image: louislam/uptime-kuma:1.23.13
+    image: louislam/uptime-kuma:1.23.13@sha256:96510915e6be539b76bcba2e6873591c67aca8a6075ff09f5b4723ae47f333fc
     container_name: monitoring_uptime_kuma
     restart: unless-stopped
     volumes:
