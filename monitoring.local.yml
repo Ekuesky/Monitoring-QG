@@ -7,14 +7,14 @@
 #   - Exporters applicatifs (Postgres, Redis, Nginx de Koda)
 #
 # Services superflus désactivés par défaut (profils optionnels) :
-#   - Loki & Promtail  : profil 'logs'    (économise ~250 Mo RAM)
+#   - Loki & Alloy     : profil 'logs'    (économise ~250 Mo RAM)
 #   - cAdvisor         : profil 'system'  (économise ~100 Mo RAM)
 #   - Alertmanager     : profil 'alerts'  (économise ~40 Mo RAM)
 #   - Uptime Kuma      : profil 'kuma'    (économise ~200 Mo RAM)
 #
 # USAGE :
 #   make local                -> Strict minimum (5 conteneurs, ~300 Mo RAM)
-#   make local-logs           -> Strict minimum + Loki & Promtail
+#   make local-logs           -> Strict minimum + Loki & Alloy
 #   make local-full           -> Tous les services locaux
 # =============================================================================
 

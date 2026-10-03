@@ -2,7 +2,7 @@
 
 Un quartier général de monitoring **clé en main, sécurisé et prêt pour la production**, conçu pour surveiller plusieurs projets indépendants hébergés sur une même machine Docker (serveur dédié, VPS ou machine locale).
 
-Il centralise les **métriques** (Prometheus), les **logs** (Loki + Promtail), les **dashboards** (Grafana préconfiguré) et les **alertes** (Alertmanager) sans alourdir ni modifier les `docker-compose.yml` de vos applications.
+Il centralise les **métriques** (Prometheus), les **logs** (Loki + Alloy), les **dashboards** (Grafana préconfiguré) et les **alertes** (Alertmanager) sans alourdir ni modifier les `docker-compose.yml` de vos applications.
 
 ---
 
@@ -142,7 +142,7 @@ Un [Makefile](Makefile) rassemble toutes les commandes usuelles :
 # Démarre uniquement Prometheus, Grafana et les exporters applicatifs
 make local
 
-# 2. Si vous voulez également agréger les logs dans Grafana (+ Loki & Promtail) :
+# 2. Si vous voulez également agréger les logs dans Grafana (+ Loki & Alloy) :
 make local-logs
 
 # 3. Si vous voulez démarrer TOUS les services en local (Alertmanager, cAdvisor, Uptime Kuma) :
@@ -161,7 +161,7 @@ make prod
 | Commande | Action | Description |
 |---|---|---|
 | `make local` | Démarrage dev | Strict minimum vital (**~300 Mo RAM**) |
-| `make local-logs` | Démarrage dev + logs | Strict minimum + Loki + Promtail (**~550 Mo**) |
+| `make local-logs` | Démarrage dev + logs | Strict minimum + Loki + Alloy (**~550 Mo**) |
 | `make local-full` | Démarrage dev complet | Tous les services en local (**~800 Mo**) |
 | `make prod` | Démarrage production | Version durcie (**Node Exporter**, quotas, ports privés) |
 | `make down` | Arrêt | Éteint proprement l'ensemble des conteneurs |
