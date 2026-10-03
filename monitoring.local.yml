@@ -42,13 +42,13 @@ services:
       - alerts
       - full
 
-  # Loki & Promtail : inutiles si on consulte les logs dans le terminal
+  # Loki & Alloy : inutiles si on consulte les logs dans le terminal
   loki:
     profiles:
       - logs
       - full
 
-  promtail:
+  alloy:
     profiles:
       - logs
       - full
@@ -59,17 +59,3 @@ services:
       - kuma
       - full
 
-  # ---------------------------------------------------------------------------
-  # EXPORTERS — Ports publiés sur localhost pour faciliter curl & debug direct
-  # ---------------------------------------------------------------------------
-  postgres_exporter_koda:
-    ports:
-      - "127.0.0.1:9187:9187"
-
-  redis_exporter_koda:
-    ports:
-      - "127.0.0.1:9121:9121"
-
-  nginx_exporter_koda:
-    ports:
-      - "127.0.0.1:9113:9113"

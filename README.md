@@ -26,20 +26,21 @@ Quand on héberge plusieurs applications sur un serveur (ou en local) :
 ```text
 monitoring/
 ├── .env.example            # Variables d'environnement (ports personnalisables)
-├── monitoring.yml          # Socle commun (Grafana, Prometheus, Loki, Promtail, etc.)
+├── monitoring.yml          # Socle commun agnostique (Grafana, Prometheus, Loki, Alloy, etc.)
 ├── monitoring.local.yml    # Surcouche locale (Strict minimum ~300 Mo, rétention 2j)
 ├── monitoring.prod.yml     # Surcouche production (Node Exporter, quotas, ports sécurisés)
 ├── Makefile                # Commandes simples (make local, make prod, make reload, make secure...)
-├── add-project.sh          # Script CLI interactif pour brancher un nouveau projet
+├── add-project.sh          # Script CLI interactif pour brancher un nouveau projet en 1 commande
 ├── CONTRIBUTING.md         # Guide de contribution
 ├── prometheus/
-│   ├── prometheus.yml      # Configuration du scraping multi-projets
-│   └── alerts.yml          # Règles d'alertes génériques et alertes système hôte
+│   ├── prometheus.yml      # Configuration du scraping (file_sd dynamique)
+│   ├── alerts.yml          # Règles d'alertes génériques et alertes système hôte
+│   └── targets/            # Cibles dynamiques par projet (koda.yml, ...)
 ├── alertmanager/
 │   ├── alertmanager.yml    # Routage des alertes (Email, Slack, Discord)
 │   └── .env.alertmanager.example
-├── promtail/
-│   └── promtail.yml        # Découverte automatique des logs de conteneurs
+├── alloy/
+│   └── config.alloy        # Découverte automatique des logs de conteneurs (ex-Promtail)
 ├── loki/loki.yml           # Stockage et indexation des logs
 ├── grafana/
 │   ├── provisioning/       # Datasources et dashboards provisionnés automatiquement
@@ -47,7 +48,7 @@ monitoring/
 │       ├── overview.json    # Dashboard 1 : Santé globale de l'hôte et de tous les projets
 │       └── per-project.json # Dashboard 2 : Vue détaillée par projet (sélecteur dynamique)
 └── exporters/
-    └── koda/               # Exemple d'intégration d'un projet réel (voir ci-dessous)
+    └── koda/               # Exemple d'intégration d'un projet réel (docker-compose.yml + .env)
 ```
 
 ---
@@ -72,9 +73,11 @@ networks:
 ```bash
 ./add-project.sh monprojet
 ```
-Le script va :
-1. Créer le dossier `exporters/monprojet/` avec les fichiers de credentials d'exemple.
-2. Vous afficher les blocs YAML exacts à copier dans `monitoring.yml` et `prometheus/prometheus.yml`.
+Le script va automatiquement :
+1. Vérifier ou créer le réseau Docker `monprojet_network`.
+2. Créer le dossier `exporters/monprojet/` avec son `docker-compose.yml` dédié et ses credentials `.env`.
+3. Générer le fichier de cibles Prometheus `prometheus/targets/monprojet.yml`.
+4. Vous n'avez plus qu'à renseigner vos credentials et lancer `make local` (ou `make prod`). **Aucun fichier central à modifier !**
 
 #### Étape 3 : Activez les logs automatiques (Optionnel mais recommandé)
 Dans le `docker-compose.yml` de votre application, ajoutez simplement le label `project` à vos conteneurs :
@@ -85,7 +88,7 @@ services:
     labels:
       project: "monprojet"
 ```
-**Promtail détectera automatiquement ces labels** et catégorisera tous les logs dans Grafana sans aucune configuration supplémentaire !
+**Grafana Alloy détectera automatiquement ces labels** et catégorisera tous les logs dans Grafana sans aucune configuration supplémentaire !
 
 ---
 

@@ -48,7 +48,8 @@ Avant de modifier quoi que ce soit, familiarisez-vous avec l'architecture :
 | `prometheus/alerts.yml` | Règles d'alertes |
 | `alertmanager/alertmanager.yml` | Routage des alertes |
 | `grafana/dashboards/` | Dashboards Grafana (JSON) |
-| `exporters/<projet>/` | Configuration par projet |
+| `prometheus/targets/` | Cibles dynamiques par projet (file_sd) |
+| `exporters/<projet>/` | Stack Docker Compose et secrets par projet |
 | `.env.example` | Variables d'environnement (ports, etc.) |
 
 ---

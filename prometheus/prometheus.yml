@@ -61,60 +61,15 @@ scrape_configs:
       - targets: ["node_exporter:9100"]
 
   # ===========================================================================
-  # KODA — Jobs par type de service
+  # EXPORTERS APPLICATIFS — Découverte automatique par projet (file_sd)
+  # Tout fichier *.yml ou *.json placé dans /etc/prometheus/targets/ est
+  # automatiquement détecté et scrapé à chaud par Prometheus (sans redémarrage).
   # ===========================================================================
+  - job_name: "projects"
+    honor_labels: true
+    file_sd_configs:
+      - files:
+          - "/etc/prometheus/targets/*.yml"
+          - "/etc/prometheus/targets/*.json"
+        refresh_interval: 10s
 
-  # PostgreSQL — Koda
-  - job_name: "postgres"
-    static_configs:
-      - targets: ["postgres_exporter_koda:9187"]
-        labels:
-          project: "koda"
-          service: "postgres"
-      # — ProjetX (décommenter pour ajouter) —
-      # - targets: ["postgres_exporter_projetx:9187"]
-      #   labels:
-      #     project: "projetx"
-      #     service: "postgres"
-
-  # Redis — Koda
-  - job_name: "redis"
-    static_configs:
-      - targets: ["redis_exporter_koda:9121"]
-        labels:
-          project: "koda"
-          service: "redis"
-      # - targets: ["redis_exporter_projetx:9121"]
-      #   labels:
-      #     project: "projetx"
-      #     service: "redis"
-
-  # Nginx — Koda
-  - job_name: "nginx"
-    static_configs:
-      - targets: ["nginx_exporter_koda:9113"]
-        labels:
-          project: "koda"
-          service: "nginx"
-
-  # Celery Flower — Koda
-  # Flower expose /metrics nativement sur :5555 (pas d'exporter supplémentaire)
-  # Prometheus se connecte directement via koda_network → koda_flower
-  - job_name: "flower"
-    metrics_path: /metrics
-    static_configs:
-      - targets: ["koda_flower:5555"]
-        labels:
-          project: "koda"
-          service: "celery"
-
-  # ===========================================================================
-  # <ProjetX> — Jobs par type de service (dupliquer ce bloc)
-  # ===========================================================================
-
-  # - job_name: "postgres_projetx"
-  #   static_configs:
-  #     - targets: ["postgres_exporter_projetx:9187"]
-  #       labels:
-  #         project: "projetx"
-  #         service: "postgres"

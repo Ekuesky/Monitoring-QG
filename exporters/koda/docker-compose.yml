@@ -1,0 +1,44 @@
+services:
+  postgres_exporter_koda:
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: monitoring_postgres_koda
+    restart: unless-stopped
+    env_file:
+      - ./exporters/koda/.env.postgres_exporter
+    networks:
+      - koda_network
+      - monitoring_network
+    labels:
+      project: "koda"
+      service: "postgres"
+
+  redis_exporter_koda:
+    image: oliver006/redis_exporter:v1.92.1
+    container_name: monitoring_redis_koda
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: "redis://koda_redis:6379"
+    networks:
+      - koda_network
+      - monitoring_network
+    labels:
+      project: "koda"
+      service: "redis"
+
+  nginx_exporter_koda:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: monitoring_nginx_koda
+    restart: unless-stopped
+    command:
+      - "--nginx.scrape-uri=http://koda_nginx/nginx_status"
+    networks:
+      - koda_network
+      - monitoring_network
+    labels:
+      project: "koda"
+      service: "nginx"
+
+networks:
+  koda_network:
+    external: true
+  monitoring_network: {}

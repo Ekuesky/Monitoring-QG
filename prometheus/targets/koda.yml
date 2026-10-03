@@ -1,0 +1,32 @@
+# =============================================================================
+# Cibles Prometheus — Projet : Koda
+# Découverte automatique via file_sd_configs (/etc/prometheus/targets/*.yml)
+# =============================================================================
+
+- targets:
+    - "postgres_exporter_koda:9187"
+  labels:
+    project: "koda"
+    service: "postgres"
+    job: "postgres"
+
+- targets:
+    - "redis_exporter_koda:9121"
+  labels:
+    project: "koda"
+    service: "redis"
+    job: "redis"
+
+- targets:
+    - "nginx_exporter_koda:9113"
+  labels:
+    project: "koda"
+    service: "nginx"
+    job: "nginx"
+
+- targets:
+    - "koda_flower:5555"
+  labels:
+    project: "koda"
+    service: "celery"
+    job: "flower"

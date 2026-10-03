@@ -1,14 +1,18 @@
 .PHONY: help local local-logs local-full prod down logs status reload check-env validate secure
 
+# Détection automatique de tous les compose files des exporters de projets
+EXPORTERS_COMPOSE := $(wildcard exporters/*/docker-compose.yml)
+COMPOSE_EXPORTERS_ARGS := $(addprefix -f ,$(EXPORTERS_COMPOSE))
+
 help: ## Affiche l'aide
 	@echo "Monitoring QG — Commandes disponibles :"
 	@echo ""
 	@echo "  make local       Démarre le STRICT MINIMUM en local (Prometheus, Grafana, Exporters ~300 Mo RAM)"
-	@echo "  make local-logs  Démarre le strict minimum + agrégation des logs (Loki + Promtail)"
+	@echo "  make local-logs  Démarre le strict minimum + agrégation des logs (Loki + Alloy)"
 	@echo "  make local-full  Démarre TOUTE la stack locale (Alertmanager, cAdvisor, Uptime Kuma inclus)"
 	@echo "  make prod        Démarre la stack de production (Node Exporter, quotas, sécurité)"
-	@echo "  make down        Arrête la stack de monitoring"
-	@echo "  make status      Affiche l'état des conteneurs"
+	@echo "  make down        Arrête la stack de monitoring et tous les exporters"
+	@echo "  make status      Affiche l'état de tous les conteneurs"
 	@echo "  make logs        Affiche les logs de la stack"
 	@echo "  make reload      Recharge la configuration Prometheus sans redémarrer (hot-reload)"
 	@echo "  make check-env   Vérifie que les fichiers .env nécessaires existent"
@@ -54,12 +58,12 @@ check-env: ## Vérifie que les fichiers .env nécessaires existent
 
 validate: ## Valide la syntaxe des fichiers Docker Compose
 	@echo "🔍  Validation de la configuration Docker Compose..."
-	@docker compose -f monitoring.yml -f monitoring.local.yml config --quiet 2>&1 && \
-		echo "  ✅  monitoring.yml + monitoring.local.yml — OK" || \
-		echo "  ❌  monitoring.yml + monitoring.local.yml — ERREUR"
-	@docker compose -f monitoring.yml -f monitoring.prod.yml config --quiet 2>&1 && \
-		echo "  ✅  monitoring.yml + monitoring.prod.yml — OK" || \
-		echo "  ❌  monitoring.yml + monitoring.prod.yml — ERREUR"
+	@docker compose -f monitoring.yml -f monitoring.local.yml $(COMPOSE_EXPORTERS_ARGS) config --quiet 2>&1 && \
+		echo "  ✅  monitoring.yml + monitoring.local.yml + exporters — OK" || \
+		echo "  ❌  monitoring.yml + monitoring.local.yml + exporters — ERREUR"
+	@docker compose -f monitoring.yml -f monitoring.prod.yml $(COMPOSE_EXPORTERS_ARGS) config --quiet 2>&1 && \
+		echo "  ✅  monitoring.yml + monitoring.prod.yml + exporters — OK" || \
+		echo "  ❌  monitoring.yml + monitoring.prod.yml + exporters — ERREUR"
 	@echo ""
 	@echo "✅  Validation terminée."
 
@@ -81,30 +85,30 @@ secure: ## Génère un mot de passe Grafana aléatoire sécurisé
 # DÉMARRAGE — Modes local et production
 # =============================================================================
 
-local: check-env ## Démarrage en local — STRICT MINIMUM (5 conteneurs : Prometheus, Grafana, Exporters)
-	docker compose -f monitoring.yml -f monitoring.local.yml up -d
+local: check-env ## Démarrage en local — STRICT MINIMUM (Prometheus, Grafana, Exporters)
+	docker compose -f monitoring.yml -f monitoring.local.yml $(COMPOSE_EXPORTERS_ARGS) up -d
 
-local-logs: check-env ## Démarrage en local avec Loki & Promtail pour les logs
-	docker compose -f monitoring.yml -f monitoring.local.yml --profile logs up -d
+local-logs: check-env ## Démarrage en local avec Loki & Alloy pour les logs
+	docker compose -f monitoring.yml -f monitoring.local.yml $(COMPOSE_EXPORTERS_ARGS) --profile logs up -d
 
 local-full: check-env ## Démarrage en local complet (Alertmanager, cAdvisor, Uptime Kuma, Logs)
-	docker compose -f monitoring.yml -f monitoring.local.yml --profile full up -d
+	docker compose -f monitoring.yml -f monitoring.local.yml $(COMPOSE_EXPORTERS_ARGS) --profile full up -d
 
 prod: check-env ## Démarrage en production (Node Exporter, ports sécurisés 127.0.0.1, quotas)
-	docker compose -f monitoring.yml -f monitoring.prod.yml up -d
+	docker compose -f monitoring.yml -f monitoring.prod.yml $(COMPOSE_EXPORTERS_ARGS) up -d
 
 # =============================================================================
 # GESTION — Arrêt, statut, logs, reload
 # =============================================================================
 
 down: ## Arrêt de la stack
-	docker compose -f monitoring.yml -f monitoring.local.yml --profile full down
+	docker compose -f monitoring.yml -f monitoring.local.yml $(COMPOSE_EXPORTERS_ARGS) --profile full down
 
 status: ## État des conteneurs
-	docker compose -f monitoring.yml ps
+	docker compose -f monitoring.yml $(COMPOSE_EXPORTERS_ARGS) ps
 
 logs: ## Logs en direct
-	docker compose -f monitoring.yml logs -f
+	docker compose -f monitoring.yml $(COMPOSE_EXPORTERS_ARGS) logs -f
 
 reload: ## Hot-reload Prometheus
 	@curl -s -X POST http://localhost:$${PROMETHEUS_PORT:-19090}/-/reload && echo "✅ Configuration Prometheus rechargée avec succès." || echo "❌ Échec du reload (Prometheus actif sur $${PROMETHEUS_PORT:-19090} ?)"
