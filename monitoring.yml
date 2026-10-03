@@ -18,7 +18,7 @@ services:
   # NOTE : Port 19090 (et non 9090) pour éviter le conflit avec koda_nginx
   # ---------------------------------------------------------------------------
   prometheus:
-    image: prom/prometheus:v3.13.0@sha256:c6b27ea434f8389bfe233fbc7be381cf50587c286e871bc842008f5a1b1908a7
+    image: prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
     container_name: monitoring_prometheus
     restart: unless-stopped
     command:
