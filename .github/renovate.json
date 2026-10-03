@@ -7,12 +7,25 @@
     "fileMatch": [
       "(^|/)docker-compose[^/]*\\.ya?ml$",
       "(^|/)monitoring(\\.local|\\.prod)?\\.ya?ml$"
-    ],
-    "pinDigests": true
+    ]
   },
   "packageRules": [
     {
+      "description": "Ne pas ouvrir de PR pour les simples mises a jour de digest (sans changement de version)",
       "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
+    },
+    {
+      "description": "Ne pas ouvrir de PR dediee uniquement au pinning proactif",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["pin"],
+      "enabled": false
+    },
+    {
+      "description": "Pinner automatiquement le digest SHA256 uniquement lors des montees de version",
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
       "pinDigests": true
     }
   ]
