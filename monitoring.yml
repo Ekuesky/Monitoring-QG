@@ -43,7 +43,7 @@ services:
   # Accès : http://localhost:9093
   # ---------------------------------------------------------------------------
   alertmanager:
-    image: prom/alertmanager:v0.33.1@sha256:9e082985f56f4c8c9f724e18f2288c6708f472e56a5286b8863d080434ea065d
+    image: prom/alertmanager:v0.34.1@sha256:e9733bafb1bdef9b00e25a21f8f99dc26a22224bf16641ad754d1649f4c3357a
     container_name: monitoring_alertmanager
     restart: unless-stopped
     command:
