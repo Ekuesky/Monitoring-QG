@@ -146,7 +146,7 @@ services:
   # Accès : http://localhost:3002
   # ---------------------------------------------------------------------------
   uptime_kuma:
-    image: louislam/uptime-kuma:1.23.13@sha256:96510915e6be539b76bcba2e6873591c67aca8a6075ff09f5b4723ae47f333fc
+    image: louislam/uptime-kuma:2.5.6@sha256:9912da7d7d9b6ddc0c2d904beb84d24689c1ed9c33b81419eb9008663a92a329
     container_name: monitoring_uptime_kuma
     restart: unless-stopped
     volumes:
