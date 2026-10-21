@@ -31,15 +31,26 @@ groups:
           summary: "[{{ $labels.project }}] Conteneur {{ $labels.name }} — CPU saturé"
           description: "Le conteneur {{ $labels.name }} (projet: {{ $labels.project }}) utilise {{ $value | printf \"%.0f\" }}% des ressources CPU globales du serveur depuis plus de 5 minutes."
 
+      # Un conteneur arrêté disparaît des métriques cAdvisor (staleness immédiate),
+      # donc `time() - container_last_seen` ne fonctionne pas de façon fiable.
+      # On détecte les conteneurs vus dans les 10 dernières minutes mais absents
+      # maintenant (corrélation par nom → un redéploiement avec le même nom ne
+      # déclenche pas). Ignoré si cAdvisor lui-même est DOWN (évite une tempête).
+      # NB : un arrêt volontaire (docker compose down) alertera pendant ~10 min.
       - alert: ContainerDown
         expr: |
-          absent(container_last_seen{name!=""})
+          (
+            max by (name, project) (max_over_time(container_last_seen{name!=""}[10m]))
+            unless on (name)
+            container_last_seen{name!=""}
+          )
+          and on () (up{job="cadvisor"} == 1)
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "Conteneur non détecté"
-          description: "Un conteneur n'est plus détecté par cAdvisor depuis 1 minute."
+          summary: "[{{ $labels.project }}] Conteneur {{ $labels.name }} arrêté"
+          description: "Le conteneur {{ $labels.name }} (projet: {{ $labels.project }}) n'est plus détecté par cAdvisor alors qu'il tournait au cours des 10 dernières minutes."
 
   # ---------------------------------------------------------------------------
   # ALERTES HÔTE PHYSIQUE / SERVEUR (Node Exporter — Production)
