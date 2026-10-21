@@ -2,6 +2,11 @@
 # Configuration Alertmanager — QG Multi-projets
 # Les alertes sont groupées par projet (label "project").
 # Secrets (email, webhook) dans alertmanager/.env.alertmanager (non commité).
+#
+# NOTE : Alertmanager ne substitue PAS les variables d'environnement.
+# Le placeholder ${ALERT_EMAIL} est remplacé au démarrage du conteneur
+# (voir entrypoint du service alertmanager dans monitoring.yml).
+# → Après modification de ce fichier ou du .env : redémarrer le conteneur.
 # =============================================================================
 
 global:
@@ -24,13 +29,13 @@ route:
   repeat_interval: 4h
 
   routes:
-    - match:
-        severity: critical
+    - matchers:
+        - severity = "critical"
       receiver: "critical-alerts"
       repeat_interval: 1h
 
-    - match:
-        severity: warning
+    - matchers:
+        - severity = "warning"
       receiver: "team-email"
       repeat_interval: 4h
 
@@ -42,7 +47,7 @@ receivers:
   # Alertes critiques : Email + Slack/Discord
   - name: "critical-alerts"
     email_configs:
-      - to: "ton-email@example.com"       # Remplace par ton email
+      - to: "${ALERT_EMAIL}"              # Défini dans alertmanager/.env.alertmanager
         send_resolved: true
         headers:
           Subject: "[CRITIQUE][{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
@@ -66,7 +71,7 @@ receivers:
   # Alertes warning : Email seulement
   - name: "team-email"
     email_configs:
-      - to: "ton-email@example.com"       # Remplace par ton email
+      - to: "${ALERT_EMAIL}"              # Défini dans alertmanager/.env.alertmanager
         send_resolved: true
         headers:
           Subject: "[WARNING][{{ .CommonLabels.project | default \"monitoring\" }}] {{ .CommonLabels.alertname }}"
@@ -75,8 +80,8 @@ receivers:
 # INHIBITION
 # =============================================================================
 inhibit_rules:
-  - source_match:
-      severity: "critical"
-    target_match:
-      severity: "warning"
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
     equal: ["alertname", "project"]

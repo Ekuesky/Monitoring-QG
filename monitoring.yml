@@ -46,9 +46,17 @@ services:
     image: prom/alertmanager:v0.33.1@sha256:9e082985f56f4c8c9f724e18f2288c6708f472e56a5286b8863d080434ea065d
     container_name: monitoring_alertmanager
     restart: unless-stopped
+    env_file:
+      - path: ./alertmanager/.env.alertmanager
+        required: false
+    # Alertmanager ne gère pas les variables d'environnement dans sa config :
+    # on substitue ${ALERT_EMAIL} au démarrage puis on lance le binaire.
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - "--config.file=/etc/alertmanager/alertmanager.yml"
-      - "--storage.path=/alertmanager"
+      - |
+        : "$${ALERT_EMAIL:?ALERT_EMAIL non défini (voir alertmanager/.env.alertmanager.example)}"
+        sed "s|\$${ALERT_EMAIL}|$${ALERT_EMAIL}|g" /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml
+        exec /bin/alertmanager --config.file=/tmp/alertmanager.yml --storage.path=/alertmanager
     volumes:
       - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
