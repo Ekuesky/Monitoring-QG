@@ -91,7 +91,7 @@ services:
   # LOKI — Centralisation des logs
   # ---------------------------------------------------------------------------
   loki:
-    image: grafana/loki:3.7.3@sha256:70b9f699fc9bb868b62f1cfd4f787dfa50242f1fd92e6089787d5d7daea75fe8
+    image: grafana/loki:3.7.10@sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7
     container_name: monitoring_loki
     restart: unless-stopped
     command: -config.file=/etc/loki/loki.yml
